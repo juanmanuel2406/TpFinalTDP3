@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/* Colores y tipografía del proyecto: se usan como clases (bg-violeta, text-tinta, etc.) */
+@theme {
+  --font-sans: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --color-tinta: #1e1b4b;
+  --color-fondo: #fbf7ff;
+  --color-violeta: #6d28d9;
+  --color-violeta-oscuro: #4c1d95;
+  --color-chicle: #ff4f8b;
+  --color-sol: #ffc93c;
+  --color-menta: #10b9a0;
+  --color-cielo: #2563eb;
+  --color-naranja: #ff7a2f;
+}
+
+body {
+  background-color: var(--color-fondo);
+  color: var(--color-tinta);
+}
+
+/* Franja de colores (se usa en la barra y en las tarjetas de formulario) */
+.franja {
+  background: linear-gradient(
+    90deg,
+    var(--color-sol) 0 16.6%,
+    var(--color-menta) 16.6% 33.3%,
+    var(--color-chicle) 33.3% 50%,
+    var(--color-cielo) 50% 66.6%,
+    var(--color-naranja) 66.6% 83.3%,
+    #9be15d 83.3% 100%
+  );
+}
+
+/* Única animación de entrada: las tarjetas de materias aparecen una detrás de otra */
+@keyframes entrada {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) rotate(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+}
+
+.animate-entrada {
+  animation: entrada 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-entrada {
+    animation: none;
+  }
+}
