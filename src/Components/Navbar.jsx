@@ -39,7 +39,7 @@ function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4 sm:gap-6">
           <Link to="/" className="text-2xl font-extrabold tracking-tight text-white">
-            Bedelía
+            Sistema de Alumnos
           </Link>
           <ul className="flex items-center gap-1">
             {enlacesIzquierda.map((enlace) => (
