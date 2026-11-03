@@ -1,55 +1,50 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { actualizarAlumno, crearAlumno, eliminarAlumno, getAlumnos } from '../api'
-import { useAuthStore } from '../store/useAuthStore'
+import useAuthStore from '../store/useAuthStore'
 import { colorCarrera } from '../colores'
 import Boton from './Boton'
 import Campo from './Campo'
 import Mensaje from './Mensaje'
 
-const formVacio = { nombre: '', mail: '', usuario: '', pass: '' }
+const formularioVacio = { nombre: '', mail: '', usuario: '', pass: '' }
 
 function Alumnos() {
-  const { esAdmin } = useAuthStore()
+  const { usuario } = useAuthStore()
+  const esAdmin = usuario?.id_rol === 1
   const [alumnos, setAlumnos] = useState([])
-  const [form, setForm] = useState(formVacio)
+  const [formulario, setFormulario] = useState(formularioVacio)
   const [busqueda, setBusqueda] = useState('')
   const [editandoId, setEditandoId] = useState(null)
   const [error, setError] = useState(null)
   const [exito, setExito] = useState(null)
   const [cargando, setCargando] = useState(true)
 
-  const cargar = async () => {
-    try {
-      setAlumnos(await getAlumnos())
-      setError(null)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setCargando(false)
-    }
-  }
+  const [recargar, setRecargar] = useState(0)
 
   useEffect(() => {
     let activo = true
-    getAlumnos()
-      .then((lista) => {
-        if (!activo) return
-        setAlumnos(lista)
+
+    const obtenerAlumnos = async () => {
+      try {
+        setCargando(true)
         setError(null)
-      })
-      .catch((err) => {
-        if (activo) setError(err.message)
-      })
-      .finally(() => {
+        const alumnos = await getAlumnos()
+        if (!activo) return
+        setAlumnos(alumnos)
+      } catch (err) {
+        if (activo) setError(err.response?.data?.message || err.message)
+      } finally {
         if (activo) setCargando(false)
-      })
+      }
+    }
+
+    obtenerAlumnos()
     return () => {
       activo = false
     }
-  }, [])
+  }, [recargar])
 
-  // filter: busca por nombre, usuario o mail
   const alumnosFiltrados = alumnos.filter((alumno) =>
     [alumno.nombre, alumno.usuario, alumno.mail]
       .join(' ')
@@ -57,47 +52,47 @@ function Alumnos() {
       .includes(busqueda.toLowerCase())
   )
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  const cambiarCampo = (e) => {
+    setFormulario({ ...formulario, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = async (e) => {
+  const guardar = async (e) => {
     e.preventDefault()
     setError(null)
     setExito(null)
     try {
       if (editandoId !== null) {
-        await actualizarAlumno(editandoId, { nombre: form.nombre, mail: form.mail })
+        await actualizarAlumno(editandoId, { nombre: formulario.nombre, mail: formulario.mail })
         setExito('Alumno actualizado.')
         setEditandoId(null)
       } else {
-        await crearAlumno(form)
-        setExito(`Alumno ${form.nombre} creado. Ya puede ingresar con el usuario ${form.usuario}.`)
+        await crearAlumno(formulario)
+        setExito(`Alumno ${formulario.nombre} creado. Ya puede ingresar con el usuario ${formulario.usuario}.`)
       }
-      setForm(formVacio)
-      await cargar()
+      setFormulario(formularioVacio)
+      setRecargar(recargar + 1)
     } catch (err) {
-      setError(err.message)
+      setError(err.response?.data?.message || err.message)
     }
   }
 
-  const handleEditar = (alumno) => {
+  const editarAlumno = (alumno) => {
     setError(null)
     setExito(null)
     setEditandoId(alumno.id)
-    setForm({ nombre: alumno.nombre, mail: alumno.mail, usuario: alumno.usuario, pass: '' })
+    setFormulario({ nombre: alumno.nombre, mail: alumno.mail, usuario: alumno.usuario, pass: '' })
   }
 
-  const handleEliminar = async (alumno) => {
+  const darDeBaja = async (alumno) => {
     if (!window.confirm(`¿Dar de baja al alumno "${alumno.nombre}"?`)) return
     setError(null)
     setExito(null)
     try {
       await eliminarAlumno(alumno.id)
       setExito('Alumno dado de baja.')
-      await cargar()
+      setRecargar(recargar + 1)
     } catch (err) {
-      setError(err.message)
+      setError(err.response?.data?.message || err.message)
     }
   }
 
@@ -112,24 +107,24 @@ function Alumnos() {
 
       {esAdmin && (
         <form
-          onSubmit={handleSubmit}
+          onSubmit={guardar}
           className="bg-white rounded-3xl border-2 border-tinta shadow-[6px_6px_0_var(--color-violeta)] p-6 mb-6 flex flex-col gap-4"
         >
           <h2 className="text-xl font-extrabold">
-            {editandoId !== null ? `Editando a ${form.nombre}` : 'Nuevo alumno'}
+            {editandoId !== null ? `Editando a ${formulario.nombre}` : 'Nuevo alumno'}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Campo label="Nombre y apellido" name="nombre" value={form.nombre} onChange={handleChange} required />
-            <Campo label="Mail" name="mail" type="email" value={form.mail} onChange={handleChange} required />
+            <Campo label="Nombre y apellido" name="nombre" value={formulario.nombre} onChange={cambiarCampo} required />
+            <Campo label="Mail" name="mail" type="email" value={formulario.mail} onChange={cambiarCampo} required />
             {editandoId === null && (
               <>
-                <Campo label="Usuario" name="usuario" value={form.usuario} onChange={handleChange} minLength={3} required />
+                <Campo label="Usuario" name="usuario" value={formulario.usuario} onChange={cambiarCampo} minLength={3} required />
                 <Campo
                   label="Contraseña (mín. 4)"
                   name="pass"
                   type="password"
-                  value={form.pass}
-                  onChange={handleChange}
+                  value={formulario.pass}
+                  onChange={cambiarCampo}
                   minLength={4}
                   autoComplete="new-password"
                   required
@@ -145,7 +140,7 @@ function Alumnos() {
                 variante="secundario"
                 onClick={() => {
                   setEditandoId(null)
-                  setForm(formVacio)
+                  setFormulario(formularioVacio)
                 }}
               />
             )}
@@ -217,8 +212,8 @@ function Alumnos() {
                 </div>
                 {esAdmin && (
                   <div className="flex gap-2">
-                    <Boton label="Editar" variante="secundario" chico onClick={() => handleEditar(alumno)} />
-                    <Boton label="Dar de baja" variante="peligro" chico onClick={() => handleEliminar(alumno)} />
+                    <Boton label="Editar" variante="secundario" chico onClick={() => editarAlumno(alumno)} />
+                    <Boton label="Dar de baja" variante="peligro" chico onClick={() => darDeBaja(alumno)} />
                   </div>
                 )}
               </li>

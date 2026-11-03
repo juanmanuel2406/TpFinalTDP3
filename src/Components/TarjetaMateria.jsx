@@ -1,7 +1,4 @@
 import { colorCarrera } from '../colores'
-
-// Ficha de la materia: franja con el color de la carrera y, si corresponde, el sticker de "Inscripto".
-// children son los botones de acción (inscribirme, ver alumnos, eliminar...)
 function TarjetaMateria({ materia, indiceColor, demora = 0, inscripto = false, children }) {
   const color = colorCarrera(indiceColor)
 

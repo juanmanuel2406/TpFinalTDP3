@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { eliminarMateria, getCarreras, getMaterias, getMateriasDeAlumno, inscribir } from '../api'
-import { useAuthStore } from '../store/useAuthStore'
+import useAuthStore from '../store/useAuthStore'
 import { colorCarrera } from '../colores'
 import MateriaNueva from './MateriaNueva'
 import TarjetaMateria from './TarjetaMateria'
@@ -12,9 +12,11 @@ const estiloEnlaceBoton =
   'bg-white text-tinta border-2 border-tinta shadow-[0_3px_0_var(--color-tinta)] hover:bg-sol px-4 py-1.5 text-sm font-bold rounded-full transition-all duration-150 active:translate-y-[3px] active:shadow-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-chicle/50'
 
 function Inicio() {
-  // useParams: en /carrera/:id toma el id de la URL (en "/" viene undefined)
   const { id } = useParams()
-  const { usuario, esAdmin, esCoordinador, esAlumno } = useAuthStore()
+  const { usuario } = useAuthStore()
+  const esAdmin = usuario?.id_rol === 1
+  const esCoordinador = usuario?.id_rol === 2
+  const esAlumno = usuario?.id_rol === 3
   const [materias, setMaterias] = useState([])
   const [carreras, setCarreras] = useState([])
   const [misMaterias, setMisMaterias] = useState([])
@@ -27,57 +29,42 @@ function Inicio() {
 
   useEffect(() => {
     let activo = true
-    getCarreras()
-      .then((cars) => {
-        if (activo) setCarreras(cars)
-      })
-      .catch((err) => {
-        if (activo) setError(err.message)
-      })
-    return () => {
-      activo = false
-    }
-  }, [])
 
-  // Trae las materias y, si es alumno, también las materias en las que ya está inscripto
-  useEffect(() => {
-    let activo = true
-    Promise.all([getMaterias(), esAlumno ? getMateriasDeAlumno(usuario.id) : []])
-      .then(([mats, propias]) => {
+    const obtenerMaterias = async () => {
+      try {
+        setCargando(true)
+        setError(null)
+        const carreras = await getCarreras()
+        const materias = await getMaterias()
+        let misMaterias = []
+        if (esAlumno) {
+          misMaterias = await getMateriasDeAlumno(usuario.id)
+        }
         if (!activo) return
-        setMaterias(mats)
-        setMisMaterias(propias)
-      })
-      .catch((err) => {
-        if (activo) setError(err.message)
-      })
-      .finally(() => {
+        setCarreras(carreras)
+        setMaterias(materias)
+        setMisMaterias(misMaterias)
+      } catch (err) {
+        if (activo) setError(err.response?.data?.message || err.message)
+      } finally {
         if (activo) setCargando(false)
-      })
+      }
+    }
+
+    obtenerMaterias()
     return () => {
       activo = false
     }
-  }, [recargar, esAlumno, usuario])
+  }, [recargar, esAlumno, usuario.id])
 
-  useEffect(() => {
-    console.log('Formulario de nueva materia:', formularioVisible ? 'visible' : 'oculto')
-  }, [formularioVisible])
-
-  // find: busca la carrera del id de la URL para mostrar su nombre
   const carreraActual = carreras.find((carrera) => String(carrera.id) === id)
-
-  // filter: primero por la carrera de la URL y después por lo que se escribió en el buscador
   const materiasFiltradas = materias
     .filter((materia) => !id || String(materia.idCarrera) === id)
     .filter((materia) => materia.nombre.toLowerCase().includes(busqueda.toLowerCase()))
-
-  // map: ids de las materias del alumno, para marcar las tarjetas con "Inscripto"
   const idsInscriptas = misMaterias.map((materia) => materia.id)
-
-  // findIndex: la posición de la carrera define su color
   const indiceColor = (idCarrera) => carreras.findIndex((carrera) => carrera.id === idCarrera)
 
-  const handleInscribir = async (materia) => {
+  const inscribirMateria = async (materia) => {
     setError(null)
     setExito(null)
     try {
@@ -85,11 +72,11 @@ function Inicio() {
       setExito(`Te inscribiste en ${materia.nombre}.`)
       setRecargar(recargar + 1)
     } catch (err) {
-      setError(err.message)
+      setError(err.response?.data?.message || err.message)
     }
   }
 
-  const handleEliminar = async (materia) => {
+  const darDeBaja = async (materia) => {
     if (!window.confirm(`¿Dar de baja la materia "${materia.nombre}"?`)) return
     setError(null)
     setExito(null)
@@ -98,7 +85,7 @@ function Inicio() {
       setExito('Materia dada de baja.')
       setRecargar(recargar + 1)
     } catch (err) {
-      setError(err.message)
+      setError(err.response?.data?.message || err.message)
     }
   }
 
@@ -216,7 +203,7 @@ function Inicio() {
                 inscripto={inscripto}
               >
                 {esAlumno && !inscripto && (
-                  <Boton label="Inscribirme" chico onClick={() => handleInscribir(materia)} />
+                  <Boton label="Inscribirme" chico onClick={() => inscribirMateria(materia)} />
                 )}
                 {(esAdmin || esCoordinador) && (
                   <Link to={`/materia/${materia.id}`} className={estiloEnlaceBoton}>
@@ -224,7 +211,7 @@ function Inicio() {
                   </Link>
                 )}
                 {esAdmin && (
-                  <Boton label="Dar de baja" variante="peligro" chico onClick={() => handleEliminar(materia)} />
+                  <Boton label="Dar de baja" variante="peligro" chico onClick={() => darDeBaja(materia)} />
                 )}
               </TarjetaMateria>
             )

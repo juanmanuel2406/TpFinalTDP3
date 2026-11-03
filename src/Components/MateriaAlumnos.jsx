@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { darDeBajaInscripcion, getAlumnosDeMateria, getCarreras, getMateria } from '../api'
-import { useAuthStore } from '../store/useAuthStore'
+import useAuthStore from '../store/useAuthStore'
 import { colorCarrera } from '../colores'
 import Boton from './Boton'
 import Mensaje from './Mensaje'
 
 function MateriaAlumnos() {
-  // useParams: el id de la materia viene en la URL (/materia/:id)
   const { id } = useParams()
-  const { esAdmin } = useAuthStore()
+  const { usuario } = useAuthStore()
+  const esAdmin = usuario?.id_rol === 1
   const [materia, setMateria] = useState(null)
   const [alumnos, setAlumnos] = useState([])
   const [carreras, setCarreras] = useState([])
@@ -21,33 +21,38 @@ function MateriaAlumnos() {
 
   useEffect(() => {
     let activo = true
-    Promise.all([getMateria(id), getAlumnosDeMateria(id), getCarreras()])
-      .then(([datosMateria, inscriptos, cars]) => {
-        if (!activo) return
-        setMateria(datosMateria)
-        setAlumnos(inscriptos)
-        setCarreras(cars)
+
+    const obtenerInscriptos = async () => {
+      try {
+        setCargando(true)
         setError(null)
-      })
-      .catch((err) => {
-        if (activo) setError(err.message)
-      })
-      .finally(() => {
+        const materia = await getMateria(id)
+        const alumnos = await getAlumnosDeMateria(id)
+        const carreras = await getCarreras()
+        if (!activo) return
+        setMateria(materia)
+        setAlumnos(alumnos)
+        setCarreras(carreras)
+      } catch (err) {
+        if (activo) setError(err.response?.data?.message || err.message)
+      } finally {
         if (activo) setCargando(false)
-      })
+      }
+    }
+
+    obtenerInscriptos()
     return () => {
       activo = false
     }
   }, [id, recargar])
 
-  // filter: busca entre los inscriptos por nombre o mail
   const alumnosFiltrados = alumnos.filter((alumno) =>
     `${alumno.nombre} ${alumno.mail}`.toLowerCase().includes(busqueda.toLowerCase())
   )
 
   const color = colorCarrera(carreras.findIndex((carrera) => carrera.id === materia?.idCarrera))
 
-  const handleBaja = async (alumno) => {
+  const darDeBaja = async (alumno) => {
     if (!window.confirm(`¿Dar de baja a ${alumno.nombre} de "${materia.nombre}"?`)) return
     setError(null)
     setExito(null)
@@ -56,7 +61,7 @@ function MateriaAlumnos() {
       setExito(`${alumno.nombre} ya no está inscripto en ${materia.nombre}.`)
       setRecargar(recargar + 1)
     } catch (err) {
-      setError(err.message)
+      setError(err.response?.data?.message || err.message)
     }
   }
 
@@ -131,7 +136,7 @@ function MateriaAlumnos() {
                 </Link>
               </div>
               {esAdmin && (
-                <Boton label="Dar de baja" variante="peligro" chico onClick={() => handleBaja(alumno)} />
+                <Boton label="Dar de baja" variante="peligro" chico onClick={() => darDeBaja(alumno)} />
               )}
             </li>
           ))}

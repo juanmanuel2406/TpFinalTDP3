@@ -1,4 +1,3 @@
-// Props: tipo 'error' o 'exito'. Si no hay texto no se muestra nada (renderizado condicional)
 function Mensaje({ tipo = 'error', texto }) {
   if (!texto) return null
 

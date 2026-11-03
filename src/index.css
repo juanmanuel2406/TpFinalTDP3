@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* Colores y tipografía del proyecto: se usan como clases (bg-violeta, text-tinta, etc.) */
 @theme {
   --font-sans: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
 
@@ -20,7 +19,6 @@ body {
   color: var(--color-tinta);
 }
 
-/* Franja de colores (se usa en la barra y en las tarjetas de formulario) */
 .franja {
   background: linear-gradient(
     90deg,
@@ -33,7 +31,6 @@ body {
   );
 }
 
-/* Única animación de entrada: las tarjetas de materias aparecen una detrás de otra */
 @keyframes entrada {
   0% {
     opacity: 0;

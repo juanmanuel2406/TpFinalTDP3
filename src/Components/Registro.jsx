@@ -1,49 +1,46 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store/useAuthStore'
+import { registrarUsuario } from '../api'
 import Boton from './Boton'
 import Campo from './Campo'
 import Mensaje from './Mensaje'
 import PanelAcceso from './PanelAcceso'
-
-// Roles que se pueden elegir al registrarse (los ids son los de la API)
 const roles = [
   { id: 3, nombre: 'Alumno' },
   { id: 2, nombre: 'Coordinador' },
   { id: 1, nombre: 'Administrador' },
 ]
 
-const formVacio = { nombre: '', mail: '', usuario: '', pass: '', rol: '3' }
+const formularioVacio = { nombre: '', mail: '', usuario: '', pass: '', rol: '3' }
 
 function Registro() {
   const navigate = useNavigate()
-  const { registrar } = useAuthStore()
-  const [form, setForm] = useState(formVacio)
+  const [formulario, setFormulario] = useState(formularioVacio)
   const [error, setError] = useState(null)
   const [exito, setExito] = useState(null)
   const [cargando, setCargando] = useState(false)
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  const cambiarCampo = (e) => {
+    setFormulario({ ...formulario, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = async (e) => {
+  const guardar = async (e) => {
     e.preventDefault()
     setError(null)
     setExito(null)
     setCargando(true)
     try {
-      const resultado = await registrar({
-        nombre: form.nombre,
-        mail: form.mail,
-        usuario: form.usuario,
-        pass: form.pass,
-        id_rol: Number(form.rol),
+      const resultado = await registrarUsuario({
+        nombre: formulario.nombre,
+        mail: formulario.mail,
+        usuario: formulario.usuario,
+        pass: formulario.pass,
+        id_rol: Number(formulario.rol),
       })
       setExito(`${resultado.message}. Ya podés ingresar con tu usuario.`)
-      setForm(formVacio)
+      setFormulario(formularioVacio)
     } catch (err) {
-      setError(err.message)
+      setError(err.response?.data?.message || err.message)
     } finally {
       setCargando(false)
     }
@@ -51,14 +48,14 @@ function Registro() {
 
   return (
     <PanelAcceso titulo="Crear cuenta" bajada="Registrate como alumno para inscribirte en materias, o como coordinador o administrador para gestionar la cursada.">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Campo label="Nombre y apellido" name="nombre" value={form.nombre} onChange={handleChange} required />
-        <Campo label="Mail" name="mail" type="email" value={form.mail} onChange={handleChange} autoComplete="email" required />
+      <form onSubmit={guardar} className="flex flex-col gap-4">
+        <Campo label="Nombre y apellido" name="nombre" value={formulario.nombre} onChange={cambiarCampo} required />
+        <Campo label="Mail" name="mail" type="email" value={formulario.mail} onChange={cambiarCampo} autoComplete="email" required />
         <Campo
           label="Usuario"
           name="usuario"
-          value={form.usuario}
-          onChange={handleChange}
+          value={formulario.usuario}
+          onChange={cambiarCampo}
           autoComplete="username"
           minLength={3}
           required
@@ -67,8 +64,8 @@ function Registro() {
           label="Contraseña (mín. 4)"
           name="pass"
           type="password"
-          value={form.pass}
-          onChange={handleChange}
+          value={formulario.pass}
+          onChange={cambiarCampo}
           autoComplete="new-password"
           minLength={4}
           required
@@ -85,8 +82,8 @@ function Registro() {
                   type="radio"
                   name="rol"
                   value={rol.id}
-                  checked={form.rol === String(rol.id)}
-                  onChange={handleChange}
+                  checked={formulario.rol === String(rol.id)}
+                  onChange={cambiarCampo}
                   className="accent-violeta"
                 />
                 {rol.nombre}

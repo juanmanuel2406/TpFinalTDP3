@@ -1,4 +1,3 @@
-// Diseño compartido por Login y Registro. children es el formulario de cada uno
 const etiquetas = [
   { nombre: 'Programación I', carrera: 'Sistemas', color: 'bg-sol', giro: '-rotate-6' },
   { nombre: 'Contabilidad', carrera: 'Contador', color: 'bg-cielo', giro: 'rotate-3' },

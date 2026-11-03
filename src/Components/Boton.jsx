@@ -1,4 +1,3 @@
-// Props: variante cambia el color del botón ('principal', 'secundario' o 'peligro')
 const variantes = {
   principal: 'bg-violeta text-white shadow-[0_4px_0_var(--color-violeta-oscuro)] hover:bg-violeta-oscuro',
   secundario: 'bg-white text-tinta border-2 border-tinta shadow-[0_3px_0_var(--color-tinta)] hover:bg-sol',

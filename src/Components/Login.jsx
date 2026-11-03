@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Link } from 'react-router-dom'
-import { useAuthStore } from '../store/useAuthStore'
+import { loginRequest } from '../api'
+import useAuthStore from '../store/useAuthStore'
 import Boton from './Boton'
 import Campo from './Campo'
 import Mensaje from './Mensaje'
@@ -10,23 +11,27 @@ import PanelAcceso from './PanelAcceso'
 function Login() {
   const navigate = useNavigate()
   const { iniciarSesion } = useAuthStore()
-  const [form, setForm] = useState({ usuario: '', pass: '' })
+  const [formulario, setFormulario] = useState({ usuario: '', pass: '' })
   const [error, setError] = useState(null)
   const [cargando, setCargando] = useState(false)
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  const cambiarCampo = (e) => {
+    setFormulario({ ...formulario, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = async (e) => {
+  const guardar = async (e) => {
     e.preventDefault()
     setError(null)
     setCargando(true)
     try {
-      await iniciarSesion(form)
+      const respuesta = await loginRequest(formulario)
+      if (!respuesta.login || !respuesta.token || !respuesta.usuario) {
+        throw new Error(respuesta.message || 'No se pudo iniciar sesion')
+      }
+      iniciarSesion(respuesta.usuario, respuesta.token)
       navigate('/')
     } catch (err) {
-      setError(err.message)
+      setError(err.response?.data?.message || err.message)
     } finally {
       setCargando(false)
     }
@@ -34,12 +39,12 @@ function Login() {
 
   return (
     <PanelAcceso titulo="Ingresar" bajada="Entrá con tu usuario para ver las materias, inscribirte o gestionar a los alumnos según tu rol.">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={guardar} className="flex flex-col gap-4">
         <Campo
           label="Usuario"
           name="usuario"
-          value={form.usuario}
-          onChange={handleChange}
+          value={formulario.usuario}
+          onChange={cambiarCampo}
           autoComplete="username"
           required
         />
@@ -47,8 +52,8 @@ function Login() {
           label="Contraseña"
           name="pass"
           type="password"
-          value={form.pass}
-          onChange={handleChange}
+          value={formulario.pass}
+          onChange={cambiarCampo}
           autoComplete="current-password"
           required
         />
@@ -68,4 +73,4 @@ function Login() {
   )
 }
 
-export default Login
+export default Login

@@ -8,15 +8,16 @@ import {
   getMateriasDeAlumno,
   inscribir,
 } from '../api'
-import { useAuthStore } from '../store/useAuthStore'
+import useAuthStore from '../store/useAuthStore'
 import TarjetaMateria from './TarjetaMateria'
 import Boton from './Boton'
 import Mensaje from './Mensaje'
 
 function AlumnoMaterias() {
-  // useParams: el id del alumno viene en la URL (/alumno/:id)
   const { id } = useParams()
-  const { usuario, esAdmin, esCoordinador } = useAuthStore()
+  const { usuario } = useAuthStore()
+  const esAdmin = usuario?.id_rol === 1
+  const esCoordinador = usuario?.id_rol === 2
   const [alumno, setAlumno] = useState(null)
   const [materias, setMaterias] = useState([])
   const [todasLasMaterias, setTodasLasMaterias] = useState([])
@@ -28,39 +29,44 @@ function AlumnoMaterias() {
   const [recargar, setRecargar] = useState(0)
 
   const esPropio = String(usuario.id) === id
-
-  // Cada vez que cambia el id de la URL se vuelve a pedir el alumno y su cursada
   useEffect(() => {
     let activo = true
-    Promise.all([getAlumno(id), getMateriasDeAlumno(id), getCarreras(), esAdmin ? getMaterias() : []])
-      .then(([datosAlumno, cursada, cars, todas]) => {
-        if (!activo) return
-        setAlumno(datosAlumno)
-        setMaterias(cursada)
-        setCarreras(cars)
-        setTodasLasMaterias(todas)
+
+    const obtenerCursada = async () => {
+      try {
+        setCargando(true)
         setError(null)
-      })
-      .catch((err) => {
-        if (activo) setError(err.message)
-      })
-      .finally(() => {
+        const alumno = await getAlumno(id)
+        const materias = await getMateriasDeAlumno(id)
+        const carreras = await getCarreras()
+        let todasLasMaterias = []
+        if (esAdmin) {
+          todasLasMaterias = await getMaterias()
+        }
+        if (!activo) return
+        setAlumno(alumno)
+        setMaterias(materias)
+        setCarreras(carreras)
+        setTodasLasMaterias(todasLasMaterias)
+      } catch (err) {
+        if (activo) setError(err.response?.data?.message || err.message)
+      } finally {
         if (activo) setCargando(false)
-      })
+      }
+    }
+
+    obtenerCursada()
     return () => {
       activo = false
     }
   }, [id, recargar, esAdmin])
 
-  // filter: materias en las que todavía no está inscripto (para el formulario del admin)
   const materiasDisponibles = todasLasMaterias.filter(
     (materia) => !materias.some((cursada) => cursada.id === materia.id)
   )
-
-  // findIndex: la posición de la carrera define su color
   const indiceColor = (idCarrera) => carreras.findIndex((carrera) => carrera.id === idCarrera)
 
-  const handleInscribir = async (e) => {
+  const inscribirMateria = async (e) => {
     e.preventDefault()
     setError(null)
     setExito(null)
@@ -70,11 +76,11 @@ function AlumnoMaterias() {
       setMateriaElegida('')
       setRecargar(recargar + 1)
     } catch (err) {
-      setError(err.message)
+      setError(err.response?.data?.message || err.message)
     }
   }
 
-  const handleBaja = async (materia) => {
+  const darDeBaja = async (materia) => {
     const pregunta = esPropio
       ? `¿Darte de baja de "${materia.nombre}"?`
       : `¿Dar de baja a ${alumno.nombre} de "${materia.nombre}"?`
@@ -86,7 +92,7 @@ function AlumnoMaterias() {
       setExito(`Baja de ${materia.nombre} registrada.`)
       setRecargar(recargar + 1)
     } catch (err) {
-      setError(err.message)
+      setError(err.response?.data?.message || err.message)
     }
   }
 
@@ -115,7 +121,7 @@ function AlumnoMaterias() {
 
       {esAdmin && !cargando && alumno && (
         <form
-          onSubmit={handleInscribir}
+          onSubmit={inscribirMateria}
           className="bg-white rounded-3xl border-2 border-tinta shadow-[6px_6px_0_var(--color-violeta)] p-6 mb-8 flex flex-col sm:flex-row sm:items-end gap-3"
         >
           <label className="flex flex-col gap-1.5 flex-1">
@@ -182,7 +188,7 @@ function AlumnoMaterias() {
               demora={Math.min(indice, 8) * 60}
             >
               {puedeDarDeBaja && (
-                <Boton label="Dar de baja" variante="peligro" chico onClick={() => handleBaja(materia)} />
+                <Boton label="Dar de baja" variante="peligro" chico onClick={() => darDeBaja(materia)} />
               )}
             </TarjetaMateria>
           ))}

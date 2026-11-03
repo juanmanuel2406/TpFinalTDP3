@@ -1,4 +1,3 @@
-// Input con su etiqueta. Recibe label y el resto de las props van directo al <input>
 function Campo({ label, ...props }) {
   return (
     <label className="flex flex-col gap-1.5 text-left">

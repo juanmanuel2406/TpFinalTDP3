@@ -1,4 +1,3 @@
-// Cada carrera tiene su color según su posición en la lista (se repiten si hay más)
 const colores = [
   { fondo: 'bg-sol', texto: 'text-tinta', borde: 'border-sol' },
   { fondo: 'bg-menta', texto: 'text-tinta', borde: 'border-menta' },

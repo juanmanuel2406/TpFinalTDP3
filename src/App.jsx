@@ -6,72 +6,22 @@ import Registro from './Components/Registro'
 import Alumnos from './Components/Alumnos'
 import AlumnoMaterias from './Components/AlumnoMaterias'
 import MateriaAlumnos from './Components/MateriaAlumnos'
-import { useAuthStore } from './store/useAuthStore'
-
-// Sin sesión no se puede ver nada (la API pide token en todas las rutas)
-function RequireSesion({ children }) {
-  const { usuario } = useAuthStore()
-  if (!usuario) return <Navigate to="/login" replace />
-  return children
-}
-
-// Solo Administrador o Coordinador
-function RequireGestion({ children }) {
-  const { esAdmin, esCoordinador } = useAuthStore()
-  if (!esAdmin && !esCoordinador) return <Navigate to="/" replace />
-  return children
-}
+import useAuthStore from './store/useAuthStore'
 
 function App() {
+  const { usuario } = useAuthStore()
+  const puedeGestionar = usuario?.id_rol === 1 || usuario?.id_rol === 2
+
   return (
     <>
       <Navbar />
       <main className="px-4 sm:px-6 py-10 flex justify-center">
         <Routes>
-          <Route
-            path="/"
-            element={
-              <RequireSesion>
-                <Inicio />
-              </RequireSesion>
-            }
-          />
-          <Route
-            path="/carrera/:id"
-            element={
-              <RequireSesion>
-                <Inicio />
-              </RequireSesion>
-            }
-          />
-          <Route
-            path="/alumno/:id"
-            element={
-              <RequireSesion>
-                <AlumnoMaterias />
-              </RequireSesion>
-            }
-          />
-          <Route
-            path="/alumnos"
-            element={
-              <RequireSesion>
-                <RequireGestion>
-                  <Alumnos />
-                </RequireGestion>
-              </RequireSesion>
-            }
-          />
-          <Route
-            path="/materia/:id"
-            element={
-              <RequireSesion>
-                <RequireGestion>
-                  <MateriaAlumnos />
-                </RequireGestion>
-              </RequireSesion>
-            }
-          />
+          <Route path="/" element={usuario ? <Inicio /> : <Navigate to="/login" replace />} />
+          <Route path="/carrera/:id" element={usuario ? <Inicio /> : <Navigate to="/login" replace />} />
+          <Route path="/alumno/:id" element={usuario ? <AlumnoMaterias /> : <Navigate to="/login" replace />} />
+          <Route path="/alumnos" element={puedeGestionar ? <Alumnos /> : <Navigate to="/" replace />} />
+          <Route path="/materia/:id" element={puedeGestionar ? <MateriaAlumnos /> : <Navigate to="/" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/registro" element={<Registro />} />
         </Routes>

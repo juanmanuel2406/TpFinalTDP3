@@ -1,98 +1,86 @@
 import axios from 'axios'
 
-const BASE_URL = ''
-
-// fetch: para las consultas (GET). En esta API todas piden el token
-async function consultar(url) {
+function autorizacion() {
   const token = localStorage.getItem('token')
-  const headers = token ? { Authorization: `Bearer ${token}` } : {}
-
-  try {
-    const respuesta = await fetch(`${BASE_URL}${url}`, { headers })
-    const data = await respuesta.json()
-    if (!respuesta.ok) {
-      const err = new Error(data.message || 'Error de conexión con el servidor')
-      err.status = respuesta.status
-      throw err
-    }
-    return data
-  } catch (error) {
-    if (error.status) throw error
-    throw new Error('Error de conexión con el servidor')
-  }
+  return { headers: { Authorization: `Bearer ${token}` } }
 }
 
-// axios: para las peticiones que mandan datos (POST, PUT, DELETE)
-async function request(url, opciones = {}) {
-  const token = localStorage.getItem('token')
-  const config = { url: `${BASE_URL}${url}`, method: opciones.method, ...opciones }
-  if (token) {
-    config.headers = { Authorization: `Bearer ${token}`, ...opciones.headers }
-  }
-
-  try {
-    const respuesta = await axios(config)
-    return respuesta.data
-  } catch (error) {
-    const mensaje =
-      error.response?.data?.message ||
-      error.message ||
-      'Error de conexión con el servidor'
-    const err = new Error(mensaje)
-    err.status = error.response?.status
-    throw err
-  }
+export async function loginRequest(datos) {
+  const respuesta = await axios.post('/usuarios/login', datos)
+  return respuesta.data
 }
 
-// Usuarios
-export const loginRequest = (datos) =>
-  request('/usuarios/login', { method: 'POST', data: datos })
+export async function registrarUsuario(datos) {
+  const respuesta = await axios.post('/usuarios', datos)
+  return respuesta.data
+}
 
-export const registrarUsuario = (datos) =>
-  request('/usuarios', { method: 'POST', data: datos })
+export async function getCarreras() {
+  const respuesta = await axios.get('/carreras', autorizacion())
+  return respuesta.data
+}
 
-// Carreras
-export const getCarreras = () =>
-  consultar('/carreras')
+export async function getMaterias() {
+  const respuesta = await axios.get('/materias', autorizacion())
+  return respuesta.data
+}
 
-// Materias
-export const getMaterias = () =>
-  consultar('/materias')
+export async function getMateria(id) {
+  const respuesta = await axios.get(`/materias/${id}`, autorizacion())
+  return respuesta.data
+}
 
-export const getMateria = (id) =>
-  consultar(`/materias/${id}`)
+export async function crearMateria(datos) {
+  const respuesta = await axios.post('/materias', datos, autorizacion())
+  return respuesta.data
+}
 
-export const crearMateria = (datos) =>
-  request('/materias', { method: 'POST', data: datos })
+export async function eliminarMateria(id) {
+  const respuesta = await axios.delete(`/materias/${id}`, autorizacion())
+  return respuesta.data
+}
 
-export const eliminarMateria = (id) =>
-  request(`/materias/${id}`, { method: 'DELETE' })
+export async function getAlumnosDeMateria(id) {
+  const respuesta = await axios.get(`/materias/${id}/alumnos`, autorizacion())
+  return respuesta.data
+}
 
-export const getAlumnosDeMateria = (id) =>
-  consultar(`/materias/${id}/alumnos`)
+export async function getAlumnos() {
+  const respuesta = await axios.get('/alumnos', autorizacion())
+  return respuesta.data
+}
 
-// Alumnos
-export const getAlumnos = () =>
-  consultar('/alumnos')
+export async function getAlumno(id) {
+  const respuesta = await axios.get(`/alumnos/${id}`, autorizacion())
+  return respuesta.data
+}
 
-export const getAlumno = (id) =>
-  consultar(`/alumnos/${id}`)
+export async function crearAlumno(datos) {
+  const respuesta = await axios.post('/alumnos', datos, autorizacion())
+  return respuesta.data
+}
 
-export const crearAlumno = (datos) =>
-  request('/alumnos', { method: 'POST', data: datos })
+export async function actualizarAlumno(id, datos) {
+  const respuesta = await axios.put(`/alumnos/${id}`, datos, autorizacion())
+  return respuesta.data
+}
 
-export const actualizarAlumno = (id, datos) =>
-  request(`/alumnos/${id}`, { method: 'PUT', data: datos })
+export async function eliminarAlumno(id) {
+  const respuesta = await axios.delete(`/alumnos/${id}`, autorizacion())
+  return respuesta.data
+}
 
-export const eliminarAlumno = (id) =>
-  request(`/alumnos/${id}`, { method: 'DELETE' })
+export async function getMateriasDeAlumno(id) {
+  const respuesta = await axios.get(`/alumnos/${id}/materias`, autorizacion())
+  return respuesta.data
+}
 
-export const getMateriasDeAlumno = (id) =>
-  consultar(`/alumnos/${id}/materias`)
+export async function inscribir(datos) {
+  const respuesta = await axios.post('/inscripciones', datos, autorizacion())
+  return respuesta.data
+}
 
-// Inscripciones
-export const inscribir = (datos) =>
-  request('/inscripciones', { method: 'POST', data: datos })
-
-export const darDeBajaInscripcion = (datos) =>
-  request('/inscripciones', { method: 'DELETE', data: datos })
+export async function darDeBajaInscripcion(datos) {
+  const respuesta = await axios.delete('/inscripciones', { ...autorizacion(), data: datos })
+  return respuesta.data
+}
