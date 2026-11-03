@@ -46,11 +46,14 @@ function MateriaAlumnos() {
     }
   }, [id, recargar])
 
-  const alumnosFiltrados = alumnos.filter((alumno) =>
-    `${alumno.nombre} ${alumno.mail}`.toLowerCase().includes(busqueda.toLowerCase())
-  )
+  const alumnosFiltrados = alumnos.filter((alumno) => {
+    const datos = `${alumno.nombre} ${alumno.mail}`.toLowerCase()
+    const textoBuscado = busqueda.toLowerCase()
+    return datos.includes(textoBuscado)
+  })
 
-  const color = colorCarrera(carreras.findIndex((carrera) => carrera.id === materia?.idCarrera))
+  const indiceCarrera = carreras.findIndex((carrera) => carrera.id === materia?.idCarrera)
+  const color = colorCarrera(indiceCarrera)
 
   const darDeBaja = async (alumno) => {
     if (!window.confirm(`¿Dar de baja a ${alumno.nombre} de "${materia.nombre}"?`)) return

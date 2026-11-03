@@ -58,9 +58,16 @@ function Inicio() {
   }, [recargar, esAlumno, usuario.id])
 
   const carreraActual = carreras.find((carrera) => String(carrera.id) === id)
-  const materiasFiltradas = materias
-    .filter((materia) => !id || String(materia.idCarrera) === id)
-    .filter((materia) => materia.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+  const materiasDeCarrera = materias.filter((materia) => {
+    if (!id) return true
+    return String(materia.idCarrera) === id
+  })
+
+  const materiasFiltradas = materiasDeCarrera.filter((materia) => {
+    const nombre = materia.nombre.toLowerCase()
+    const textoBuscado = busqueda.toLowerCase()
+    return nombre.includes(textoBuscado)
+  })
   const idsInscriptas = misMaterias.map((materia) => materia.id)
   const indiceColor = (idCarrera) => carreras.findIndex((carrera) => carrera.id === idCarrera)
 
